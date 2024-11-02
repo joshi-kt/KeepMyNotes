@@ -10,13 +10,8 @@ import dagger.hilt.android.HiltAndroidApp
 @HiltAndroidApp
 class MainApplication : Application() {
 
-    companion object {
-        lateinit var todoDatabase: TodoDatabase
-    }
-
     override fun onCreate() {
         super.onCreate()
-        todoDatabase = Room.databaseBuilder(this, TodoDatabase::class.java, TodoDatabase.NAME).build()
         AppPreferences.init(this)
     }
 

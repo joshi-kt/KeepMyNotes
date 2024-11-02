@@ -6,7 +6,6 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.keepmynotes.MainApplication
-import com.example.keepmynotes.MainApplication.Companion.todoDatabase
 import com.example.keepmynotes.data.local.dao.TodoDAO
 import com.example.keepmynotes.data.repository.AuthRepository
 import com.example.keepmynotes.data.repository.FirebaseDbRepository
