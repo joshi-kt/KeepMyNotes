@@ -60,13 +60,13 @@ import java.util.Locale
 fun ToDoListPage(navController: NavController) {
 
     val todoViewModel : TodoViewModel = hiltViewModel()
-    val authViewModel : AuthViewModel = hiltViewModel()
 
     val todoList by todoViewModel.todoList.observeAsState()
     val isSavingTodo by todoViewModel.isSavingTodo.observeAsState()
     val deletingTodoID by todoViewModel.isDeletingTodo.observeAsState()
     val todoErrorText by todoViewModel.todoErrorText.observeAsState()
-    val authenticationState by authViewModel.authenticationState.observeAsState()
+
+    val authenticationState by todoViewModel.authenticationState.observeAsState()
 
     var showDialog by rememberSaveable {
         mutableStateOf(false)
@@ -137,8 +137,7 @@ fun ToDoListPage(navController: NavController) {
                         modifier = Modifier
                             .padding(10.dp)
                             .clickable {
-                                todoViewModel.deleteAllTodo()
-                                authViewModel.logOut()
+                                todoViewModel.logOut()
                                 isMenuShown = isMenuShown.not()
                             },
                         fontSize = 16.sp,

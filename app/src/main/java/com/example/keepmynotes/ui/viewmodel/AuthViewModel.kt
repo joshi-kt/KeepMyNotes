@@ -25,11 +25,8 @@ import javax.inject.Inject
 class AuthViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val firebaseDbRepository: FirebaseDbRepository
-) : ViewModel() {
+) : BaseViewModel(authRepository) {
 
-    private val _authenticationState = MutableLiveData(if (AppPreferences.isLoggedIn) Utils.AuthenticationState.AUTHENTICATED else Utils.AuthenticationState.UNAUTHENTICATED)
-    val authenticationState : LiveData<Utils.AuthenticationState>
-        get() = _authenticationState
     private val _authErrorText = MutableLiveData<String>()
     val authErrorText : LiveData<String>
         get() = _authErrorText
@@ -113,9 +110,6 @@ class AuthViewModel @Inject constructor(
         updateAuthenticationState(Utils.AuthenticationState.AUTHENTICATED)
     }
 
-    private fun updateAuthenticationState(state : Utils.AuthenticationState){
-        _authenticationState.value = state
-    }
 
     fun resetErrorText() {
         _authErrorText.value = ""
@@ -166,10 +160,5 @@ class AuthViewModel @Inject constructor(
                 updateUiForUserLogin()
             }
         }
-    }
-
-    fun logOut() {
-        authRepository.signOut()
-        updateAuthenticationState(Utils.AuthenticationState.UNAUTHENTICATED)
     }
 }

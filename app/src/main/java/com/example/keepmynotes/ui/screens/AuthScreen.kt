@@ -121,20 +121,16 @@ fun AuthScreen(navController: NavController){
         if (isSignIn) {
             SignInScreen(changeToSignUp = {
                 isSignIn = false
-                authViewModel.resetErrorText()
             }, signIn = { email,password ->
                 if (isSignInCredentialValid(email,password)) {
-                    authViewModel.resetErrorText()
                     authViewModel.signIn(email, password)
                 }
             })
         } else {
             SignUpScreen(changeToSignIn = {
                 isSignIn = true
-                authViewModel.resetErrorText()
             }, signUp = { name , email, password ->
                 if (isSignUpCredentialValid(name, email, password)) {
-                    authViewModel.resetErrorText()
                     authViewModel.createUser(name, email, password)
                 }
             })

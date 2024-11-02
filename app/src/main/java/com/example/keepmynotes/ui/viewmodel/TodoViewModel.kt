@@ -11,6 +11,7 @@ import com.example.keepmynotes.data.repository.AuthRepository
 import com.example.keepmynotes.data.repository.FirebaseDbRepository
 import com.example.keepmynotes.model.TodoItem
 import com.example.keepmynotes.utils.RestrictedAPI
+import com.example.keepmynotes.utils.Utils
 import com.example.keepmynotes.utils.Utils.generateID
 import com.example.keepmynotes.utils.Utils.logger
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -27,8 +28,9 @@ import javax.inject.Inject
 @HiltViewModel
 class TodoViewModel @Inject constructor(
     private val firebaseDbRepository: FirebaseDbRepository,
+    authRepository: AuthRepository,
     private val todoDao: TodoDAO
-) : ViewModel() {
+) : BaseViewModel(authRepository) {
 
     var todoList : LiveData<List<TodoItem>> = todoDao.getAllTodo()
     private val _isSavingTodo = MutableLiveData(false)
@@ -101,5 +103,11 @@ class TodoViewModel @Inject constructor(
 
     fun resetErrorText() {
         _todoErrorText.value = ""
+    }
+
+    @OptIn(RestrictedAPI::class)
+    override fun logOut() {
+        deleteAllTodo()
+        super.logOut()
     }
 }
