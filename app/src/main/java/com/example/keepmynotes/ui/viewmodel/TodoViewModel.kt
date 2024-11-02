@@ -60,7 +60,6 @@ class TodoViewModel(private val authRepository: AuthRepository, private val fire
         firebaseDbRepository.deleteTodoFromDb(todoItem)?.addOnCompleteListener {
             if (it.isSuccessful) {
                 viewModelScope.launch(Dispatchers.IO) {
-                    delay(2000)
                     todoDao.deleteTodo(todoItem.id)
                     withContext(Dispatchers.Main) {
                         _isDeletingTodoID.value = ""
