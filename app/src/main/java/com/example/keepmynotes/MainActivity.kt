@@ -37,7 +37,7 @@ class MainActivity : ComponentActivity() {
                     AuthScreen(navController, viewModel = authViewModel)
                 }
                 composable(SCREEN_NOTES) { 
-                    ToDoListPage(viewModel = todoViewModel)
+                    ToDoListPage(navController, authViewModel = authViewModel , todoViewModel = todoViewModel)
                 }
             }
         }

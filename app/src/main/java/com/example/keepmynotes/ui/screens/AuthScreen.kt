@@ -60,6 +60,7 @@ import androidx.navigation.NavController
 import com.example.keepmynotes.R
 import com.example.keepmynotes.ui.theme.lightBlue
 import com.example.keepmynotes.ui.viewmodel.AuthViewModel
+import com.example.keepmynotes.utils.Utils
 import com.example.keepmynotes.utils.Utils.PLEASE_WAIT
 import com.example.keepmynotes.utils.Utils.SCREEN_NOTES
 import com.example.keepmynotes.utils.Utils.isSignInCredentialValid
@@ -79,7 +80,7 @@ fun AuthScreen(navController: NavController, viewModel: AuthViewModel){
     val authErrorText by viewModel.authErrorText.observeAsState()
     val isLoading by viewModel.showLoading.observeAsState()
 
-    if (authenticationState == AuthViewModel.AuthenticationState.AUTHENTICATED) {
+    if (authenticationState == Utils.AuthenticationState.AUTHENTICATED) {
         navController.navigate(SCREEN_NOTES)
     }
 

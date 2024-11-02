@@ -16,6 +16,10 @@ object Utils {
     const val SCREEN_AUTH = "SCREEN_AUTH"
     const val SCREEN_NOTES = "SCREEN_NOTES"
 
+    enum class AuthenticationState {
+        AUTHENTICATED, UNAUTHENTICATED
+    }
+
     fun logger(value : String) = Log.d("notesLogs",value)
 
     fun showToast(context: Context, text : String) = Toast.makeText(context, text, Toast.LENGTH_SHORT).show()

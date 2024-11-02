@@ -39,23 +39,29 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.keepmynotes.ui.viewmodel.TodoViewModel
+import androidx.navigation.NavController
 import com.example.keepmynotes.model.TodoItem
 import com.example.keepmynotes.ui.theme.lightBlack
 import com.example.keepmynotes.ui.theme.lightBlue
 import com.example.keepmynotes.ui.theme.veryLightBlack
+import com.example.keepmynotes.ui.viewmodel.AuthViewModel
+import com.example.keepmynotes.ui.viewmodel.TodoViewModel
+import com.example.keepmynotes.utils.RestrictedAPI
+import com.example.keepmynotes.utils.Utils
+import com.example.keepmynotes.utils.Utils.SCREEN_AUTH
 import com.example.keepmynotes.utils.Utils.showToast
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 @Composable
-fun ToDoListPage(viewModel: TodoViewModel) {
+fun ToDoListPage(navController: NavController, todoViewModel: TodoViewModel, authViewModel: AuthViewModel) {
 
-    val todoList by viewModel.todoList.observeAsState()
-    val isSavingTodo by viewModel.isSavingTodo.observeAsState()
-    val deletingTodoID by viewModel.isDeletingTodo.observeAsState()
-    val todoErrorText by viewModel.todoErrorText.observeAsState()
+    val todoList by todoViewModel.todoList.observeAsState()
+    val isSavingTodo by todoViewModel.isSavingTodo.observeAsState()
+    val deletingTodoID by todoViewModel.isDeletingTodo.observeAsState()
+    val todoErrorText by todoViewModel.todoErrorText.observeAsState()
+    val authenticationState by authViewModel.authenticationState.observeAsState()
 
     var showDialog by rememberSaveable {
         mutableStateOf(false)
@@ -71,7 +77,11 @@ fun ToDoListPage(viewModel: TodoViewModel) {
 
     if (!todoErrorText.isNullOrBlank()) {
         showToast(LocalContext.current, todoErrorText!!)
-        viewModel.resetErrorText()
+        todoViewModel.resetErrorText()
+    }
+
+    if (authenticationState == Utils.AuthenticationState.UNAUTHENTICATED) {
+        navController.navigate(SCREEN_AUTH)
     }
 
     Column(modifier = Modifier
@@ -82,7 +92,7 @@ fun ToDoListPage(viewModel: TodoViewModel) {
                 value = searchText,
                 onValueChange = {
                     searchText = it
-                    viewModel.searchTodo(searchText)
+                    todoViewModel.searchTodo(searchText)
                 },
                 modifier = Modifier
                     .weight(1f)
@@ -122,6 +132,8 @@ fun ToDoListPage(viewModel: TodoViewModel) {
                         modifier = Modifier
                             .padding(10.dp)
                             .clickable {
+                                todoViewModel.deleteAllTodo()
+                                authViewModel.logOut()
                                 isMenuShown = isMenuShown.not()
                             },
                         fontSize = 16.sp,
@@ -134,7 +146,7 @@ fun ToDoListPage(viewModel: TodoViewModel) {
             CreateTodoDialog(isSavingTodo = isSavingTodo ?: false, onClose = {
                 showDialog = false
             }, onSubmit = { title, description ->
-                viewModel.addTodo(title, description)
+                todoViewModel.addTodo(title, description)
                 showDialog = false
             })
         }
@@ -164,7 +176,7 @@ fun ToDoListPage(viewModel: TodoViewModel) {
                         TodoListItem(item,
                             deletingTodoID = deletingTodoID ?: "",
                             onDeleteTodo = {
-                                viewModel.deleteTodo(item)
+                                todoViewModel.deleteTodo(item)
                             }
                         )
                     }
@@ -228,8 +240,4 @@ fun getDate(createdAt: Long): String {
     val date = Date(createdAt)
     val sdf = SimpleDateFormat("dd/MM/yyyy hh:mm:ss a", Locale.getDefault())
     return sdf.format(date)
-}
-
-fun deleteToDo() {
-    Log.d("myappLogs", "Todo deleted")
 }

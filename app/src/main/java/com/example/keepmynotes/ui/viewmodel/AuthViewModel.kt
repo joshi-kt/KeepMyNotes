@@ -9,6 +9,8 @@ import com.example.keepmynotes.data.local.preferences.AppPreferences
 import com.example.keepmynotes.data.repository.AuthRepository
 import com.example.keepmynotes.data.repository.FirebaseDbRepository
 import com.example.keepmynotes.model.User
+import com.example.keepmynotes.utils.RestrictedAPI
+import com.example.keepmynotes.utils.Utils
 import com.example.keepmynotes.utils.Utils.logger
 import com.example.keepmynotes.utils.Utils.setDeviceHashToUser
 import kotlinx.coroutines.Dispatchers
@@ -19,8 +21,8 @@ import java.util.UUID
 
 class AuthViewModel(private val authRepository: AuthRepository, private val firebaseDbRepository: FirebaseDbRepository) : ViewModel() {
 
-    private val _authenticationState = MutableLiveData(if (AppPreferences.isLoggedIn) AuthenticationState.AUTHENTICATED else AuthenticationState.UNAUTHENTICATED)
-    val authenticationState : LiveData<AuthenticationState>
+    private val _authenticationState = MutableLiveData(if (AppPreferences.isLoggedIn) Utils.AuthenticationState.AUTHENTICATED else Utils.AuthenticationState.UNAUTHENTICATED)
+    val authenticationState : LiveData<Utils.AuthenticationState>
         get() = _authenticationState
     private val _authErrorText = MutableLiveData<String>()
     val authErrorText : LiveData<String>
@@ -98,19 +100,15 @@ class AuthViewModel(private val authRepository: AuthRepository, private val fire
 
     private fun updateErrorInUi(message : String) {
         _authErrorText.value = message
-        updateAuthenticationState(AuthenticationState.UNAUTHENTICATED)
+        updateAuthenticationState(Utils.AuthenticationState.UNAUTHENTICATED)
     }
 
     private fun updateUiForUserLogin() {
-        updateAuthenticationState(AuthenticationState.AUTHENTICATED)
+        updateAuthenticationState(Utils.AuthenticationState.AUTHENTICATED)
     }
 
-    private fun updateAuthenticationState(state : AuthenticationState){
+    private fun updateAuthenticationState(state : Utils.AuthenticationState){
         _authenticationState.value = state
-    }
-
-    enum class AuthenticationState {
-        AUTHENTICATED, UNAUTHENTICATED
     }
 
     fun resetErrorText() {
@@ -162,5 +160,10 @@ class AuthViewModel(private val authRepository: AuthRepository, private val fire
                 updateUiForUserLogin()
             }
         }
+    }
+
+    fun logOut() {
+        authRepository.signOut()
+        updateAuthenticationState(Utils.AuthenticationState.UNAUTHENTICATED)
     }
 }

@@ -20,6 +20,10 @@ object AppPreferences {
         preferences = context.getSharedPreferences(APP_PREFERENCE_NAME, MODE)
     }
 
+    fun clearPreferences() {
+        preferences.edit { it.clear() }
+    }
+
     private inline fun SharedPreferences.edit(operation: (SharedPreferences.Editor) -> Unit) {
         val editor = this.edit()
         operation(editor)

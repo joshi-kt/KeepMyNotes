@@ -1,5 +1,6 @@
 package com.example.keepmynotes.data.repository
 
+import com.example.keepmynotes.data.local.preferences.AppPreferences
 import com.example.keepmynotes.model.User
 import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.AuthResult
@@ -21,6 +22,7 @@ class AuthRepository {
 
     fun signOut() {
         firebaseAuth.signOut()
+        AppPreferences.clearPreferences()
     }
 
     fun currentUser() = firebaseAuth.currentUser
