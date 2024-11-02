@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.keepmynotes.MainApplication
 import com.example.keepmynotes.MainApplication.Companion.todoDatabase
+import com.example.keepmynotes.data.local.dao.TodoDAO
 import com.example.keepmynotes.data.repository.AuthRepository
 import com.example.keepmynotes.data.repository.FirebaseDbRepository
 import com.example.keepmynotes.model.TodoItem
@@ -25,9 +26,9 @@ import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
-class TodoViewModel @Inject constructor(private val authRepository: AuthRepository, private val firebaseDbRepository: FirebaseDbRepository) : ViewModel() {
+class TodoViewModel @Inject constructor(private val firebaseDbRepository: FirebaseDbRepository, private val todoDao: TodoDAO) : ViewModel() {
 
-    private val todoDao = todoDatabase.getTodoDAO()
+//    private val todoDao = todoDatabase.getTodoDAO()
     var todoList : LiveData<List<TodoItem>> = todoDao.getAllTodo()
     private val _isSavingTodo = MutableLiveData(false)
     val isSavingTodo : LiveData<Boolean>
