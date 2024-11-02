@@ -13,13 +13,16 @@ import com.example.keepmynotes.utils.RestrictedAPI
 import com.example.keepmynotes.utils.Utils
 import com.example.keepmynotes.utils.Utils.logger
 import com.example.keepmynotes.utils.Utils.setDeviceHashToUser
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.lang.Exception
 import java.util.UUID
+import javax.inject.Inject
 
-class AuthViewModel(private val authRepository: AuthRepository, private val firebaseDbRepository: FirebaseDbRepository) : ViewModel() {
+@HiltViewModel
+class AuthViewModel @Inject constructor(private val authRepository: AuthRepository, private val firebaseDbRepository: FirebaseDbRepository) : ViewModel() {
 
     private val _authenticationState = MutableLiveData(if (AppPreferences.isLoggedIn) Utils.AuthenticationState.AUTHENTICATED else Utils.AuthenticationState.UNAUTHENTICATED)
     val authenticationState : LiveData<Utils.AuthenticationState>

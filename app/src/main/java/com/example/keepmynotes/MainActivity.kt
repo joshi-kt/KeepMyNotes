@@ -3,6 +3,7 @@ package com.example.keepmynotes
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavController
 import androidx.navigation.NavHost
@@ -19,17 +20,17 @@ import com.example.keepmynotes.ui.viewmodel.AuthViewModelFactory
 import com.example.keepmynotes.ui.viewmodel.TodoViewModelFactory
 import com.example.keepmynotes.utils.Utils.SCREEN_AUTH
 import com.example.keepmynotes.utils.Utils.SCREEN_NOTES
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    private val authViewModel: AuthViewModel by viewModels()
+    private val todoViewModel: TodoViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
-        val authRepository = AuthRepository()
-        val firebaseDbRepository = FirebaseDbRepository()
-
-        val authViewModel = ViewModelProvider(this, AuthViewModelFactory(authRepository, firebaseDbRepository))[AuthViewModel::class.java]
-        val todoViewModel = ViewModelProvider(this, TodoViewModelFactory(authRepository, firebaseDbRepository))[TodoViewModel::class.java]
-
         super.onCreate(savedInstanceState)
-
+        
         setContent {
             val navController = rememberNavController()
             NavHost(navController = navController, startDestination = SCREEN_AUTH) {

@@ -13,6 +13,7 @@ import com.example.keepmynotes.model.TodoItem
 import com.example.keepmynotes.utils.RestrictedAPI
 import com.example.keepmynotes.utils.Utils.generateID
 import com.example.keepmynotes.utils.Utils.logger
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -21,8 +22,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.util.UUID
+import javax.inject.Inject
 
-class TodoViewModel(private val authRepository: AuthRepository, private val firebaseDbRepository: FirebaseDbRepository) : ViewModel() {
+@HiltViewModel
+class TodoViewModel @Inject constructor(private val authRepository: AuthRepository, private val firebaseDbRepository: FirebaseDbRepository) : ViewModel() {
 
     private val todoDao = todoDatabase.getTodoDAO()
     var todoList : LiveData<List<TodoItem>> = todoDao.getAllTodo()
