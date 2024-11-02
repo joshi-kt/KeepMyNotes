@@ -3,6 +3,7 @@ package com.example.keepmynotes.utils
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
+import com.example.keepmynotes.model.User
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import java.util.UUID
@@ -49,5 +50,9 @@ object Utils {
 
     fun generateID() : String {
         return UUID.randomUUID().toString()
+    }
+
+    fun setDeviceHashToUser(user: User) {
+        user.deviceHash = generateID()
     }
 }

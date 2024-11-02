@@ -14,6 +14,9 @@ import com.example.keepmynotes.utils.RestrictedAPI
 import com.example.keepmynotes.utils.Utils.generateID
 import com.example.keepmynotes.utils.Utils.logger
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -23,30 +26,50 @@ class TodoViewModel(private val authRepository: AuthRepository, private val fire
 
     private val todoDao = todoDatabase.getTodoDAO()
     var todoList : LiveData<List<TodoItem>> = todoDao.getAllTodo()
-    private val _showLoading = MutableLiveData(false)
-    val showLoading : LiveData<Boolean>
-        get() = _showLoading
+    private val _isSavingTodo = MutableLiveData(false)
+    val isSavingTodo : LiveData<Boolean>
+        get() = _isSavingTodo
+    private val _isDeletingTodoID = MutableLiveData<String>()
+    val isDeletingTodo : LiveData<String>
+        get() = _isDeletingTodoID
+    private val _todoErrorText = MutableLiveData<String>()
+    val todoErrorText : LiveData<String>
+        get() = _todoErrorText
 
     fun addTodo(title : String, description : String) {
-        _showLoading.value = true
+        _isSavingTodo.value = true
         val todo = TodoItem(id = generateID(), title = title, description = description, createdAt = System.currentTimeMillis())
         firebaseDbRepository.saveTodoToDb(todo)?.addOnCompleteListener {
             if (it.isSuccessful) {
                 viewModelScope.launch(Dispatchers.IO) {
                     todoDao.addTodo(todo)
                     withContext(Dispatchers.Main) {
-                        _showLoading.value = false
+                        _isSavingTodo.value = false
                     }
                 }
             } else {
+                _isSavingTodo.value = false
+                it.exception?.localizedMessage?.let { it1 -> updateErrorInUI(it1) }
                 logger("todo saving failed")
             }
         }
     }
 
-    fun deleteTodo(id : String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            todoDao.deleteTodo(id)
+    fun deleteTodo(todoItem: TodoItem) {
+        _isDeletingTodoID.value = todoItem.id
+        firebaseDbRepository.deleteTodoFromDb(todoItem)?.addOnCompleteListener {
+            if (it.isSuccessful) {
+                viewModelScope.launch(Dispatchers.IO) {
+                    delay(2000)
+                    todoDao.deleteTodo(todoItem.id)
+                    withContext(Dispatchers.Main) {
+                        _isDeletingTodoID.value = ""
+                    }
+                }
+            } else {
+                it.exception?.localizedMessage?.let { it1 -> updateErrorInUI(it1) }
+                logger("todo deletion failed")
+            }
         }
     }
 
@@ -66,5 +89,13 @@ class TodoViewModel(private val authRepository: AuthRepository, private val fire
                 todoDao.searchTodo(wildSearchText)
             }
         }
+    }
+
+    private fun updateErrorInUI(error : String) {
+        _todoErrorText.value = error
+    }
+
+    fun resetErrorText() {
+        _todoErrorText.value = ""
     }
 }

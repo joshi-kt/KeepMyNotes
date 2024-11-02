@@ -30,6 +30,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -82,10 +83,9 @@ fun AuthScreen(navController: NavController, viewModel: AuthViewModel){
         navController.navigate(SCREEN_NOTES)
     }
 
-    authErrorText?.let {
-        if (it.isNotBlank()) {
-            showToast(LocalContext.current, it)
-        }
+    if (!authErrorText.isNullOrBlank()) {
+        showToast(LocalContext.current, authErrorText!!)
+        viewModel.resetErrorText()
     }
 
     if (isLoading == true) {

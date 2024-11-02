@@ -10,6 +10,7 @@ import com.example.keepmynotes.data.repository.AuthRepository
 import com.example.keepmynotes.data.repository.FirebaseDbRepository
 import com.example.keepmynotes.model.User
 import com.example.keepmynotes.utils.Utils.logger
+import com.example.keepmynotes.utils.Utils.setDeviceHashToUser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -18,7 +19,7 @@ import java.util.UUID
 
 class AuthViewModel(private val authRepository: AuthRepository, private val firebaseDbRepository: FirebaseDbRepository) : ViewModel() {
 
-    private val _authenticationState = MutableLiveData(if (AppPreferences.loggedInUser == null) AuthenticationState.UNAUTHENTICATED else AuthenticationState.AUTHENTICATED)
+    private val _authenticationState = MutableLiveData(if (AppPreferences.isLoggedIn) AuthenticationState.AUTHENTICATED else AuthenticationState.UNAUTHENTICATED)
     val authenticationState : LiveData<AuthenticationState>
         get() = _authenticationState
     private val _authErrorText = MutableLiveData<String>()
@@ -61,6 +62,7 @@ class AuthViewModel(private val authRepository: AuthRepository, private val fire
             if (userSignInTask.isSuccessful) {
                 userSignInTask.result.user?.let { firebaseUser ->
                     fetchUserFromFirebase(firebaseUser.uid, onUserFetched = { user ->
+                        setDeviceHashToUser(user)
                         saveUserToFirebase(user, onUserSaved = {
                             saveUserLocally(user)
                             updateUiForUserLogin()
@@ -155,6 +157,7 @@ class AuthViewModel(private val authRepository: AuthRepository, private val fire
     private fun saveUserLocally(user: User) {
         viewModelScope.launch(Dispatchers.IO) {
             AppPreferences.loggedInUser = user
+            AppPreferences.isLoggedIn = true
             withContext(Dispatchers.Main) {
                 updateUiForUserLogin()
             }

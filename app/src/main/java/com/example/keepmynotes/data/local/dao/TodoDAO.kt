@@ -11,19 +11,19 @@ import com.example.keepmynotes.utils.RestrictedAPI
 @Dao
 interface TodoDAO {
 
-    @Query("SELECT * FROM TODO_ITEMS ORDER BY created_at DESC")
+    @Query("SELECT * FROM todo_items WHERE is_deleted == 0 ORDER BY created_at DESC")
     fun getAllTodo() : LiveData<List<TodoItem>>
 
     @Insert
     fun addTodo(todoItem: TodoItem)
 
-    @Query("DELETE FROM TODO_ITEMS WHERE id == :id")
+    @Query("UPDATE TODO_ITEMS SET is_deleted = 1 WHERE id == :id")
     fun deleteTodo(id : String)
 
     @Query("DELETE FROM TODO_ITEMS")
     fun deleteAllTodo()
 
-    @Query("SELECT * FROM TODO_ITEMS WHERE title LIKE :searchText OR description LIKE :searchText ORDER BY created_at DESC")
+    @Query("SELECT * FROM todo_items WHERE (title LIKE :searchText OR description LIKE :searchText) AND is_deleted == 0 ORDER BY created_at DESC")
     fun searchTodo(searchText : String) : LiveData<List<TodoItem>>
 
 }

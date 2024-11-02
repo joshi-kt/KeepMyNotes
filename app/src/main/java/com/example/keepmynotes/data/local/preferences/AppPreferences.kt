@@ -4,17 +4,20 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.example.keepmynotes.model.User
 import com.example.keepmynotes.utils.Utils
+import com.example.keepmynotes.utils.Utils.APP_PREFERENCE_NAME
+import com.example.keepmynotes.utils.Utils.IS_LOGGED_IN
+import com.example.keepmynotes.utils.Utils.LOGGED_IN
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 object AppPreferences {
     private const val MODE = Context.MODE_PRIVATE
     private lateinit var preferences: SharedPreferences
-    private val IS_LOGGED_IN_PREF = Pair(Utils.IS_LOGGED_IN, false)
-    private val LOGGED_IN_PREF = Pair(Utils.IS_LOGGED_IN, null)
+    private val IS_LOGGED_IN_PREF = Pair(IS_LOGGED_IN, false)
+    private val LOGGED_IN_PREF = Pair(LOGGED_IN, null)
 
     fun init(context: Context) {
-        preferences = context.getSharedPreferences(Utils.APP_PREFERENCE_NAME, MODE)
+        preferences = context.getSharedPreferences(APP_PREFERENCE_NAME, MODE)
     }
 
     private inline fun SharedPreferences.edit(operation: (SharedPreferences.Editor) -> Unit) {

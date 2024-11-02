@@ -16,12 +16,14 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -33,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import com.example.keepmynotes.R
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -41,6 +44,7 @@ import com.example.keepmynotes.model.TodoItem
 import com.example.keepmynotes.ui.theme.lightBlack
 import com.example.keepmynotes.ui.theme.lightBlue
 import com.example.keepmynotes.ui.theme.veryLightBlack
+import com.example.keepmynotes.utils.Utils.showToast
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -49,7 +53,9 @@ import java.util.Locale
 fun ToDoListPage(viewModel: TodoViewModel) {
 
     val todoList by viewModel.todoList.observeAsState()
-    val isSavingTodo by viewModel.showLoading.observeAsState()
+    val isSavingTodo by viewModel.isSavingTodo.observeAsState()
+    val deletingTodoID by viewModel.isDeletingTodo.observeAsState()
+    val todoErrorText by viewModel.todoErrorText.observeAsState()
 
     var showDialog by rememberSaveable {
         mutableStateOf(false)
@@ -61,6 +67,11 @@ fun ToDoListPage(viewModel: TodoViewModel) {
 
     var searchText by rememberSaveable {
         mutableStateOf("")
+    }
+
+    if (!todoErrorText.isNullOrBlank()) {
+        showToast(LocalContext.current, todoErrorText!!)
+        viewModel.resetErrorText()
     }
 
     Column(modifier = Modifier
@@ -150,9 +161,12 @@ fun ToDoListPage(viewModel: TodoViewModel) {
                     .padding(10.dp)
                     .wrapContentHeight()) {
                     itemsIndexed(it){ index, item ->
-                        TodoListItem(item) {
-                            viewModel.deleteTodo(item.id)
-                        }
+                        TodoListItem(item,
+                            deletingTodoID = deletingTodoID ?: "",
+                            onDeleteTodo = {
+                                viewModel.deleteTodo(item)
+                            }
+                        )
                     }
                 }
             }
@@ -161,7 +175,9 @@ fun ToDoListPage(viewModel: TodoViewModel) {
 }
 
 @Composable
-fun TodoListItem(todoItem: TodoItem, onDeleteTodo: () -> Unit) {
+fun TodoListItem(todoItem: TodoItem,
+                 deletingTodoID : String,
+                 onDeleteTodo: () -> Unit) {
     Row(
         modifier = Modifier
             .padding(5.dp)
@@ -191,8 +207,19 @@ fun TodoListItem(todoItem: TodoItem, onDeleteTodo: () -> Unit) {
                 color = veryLightBlack
             )
         }
-        IconButton(onClick = {onDeleteTodo()}) {
-            Image(painter = painterResource(id = R.drawable.baseline_delete_sweep_24), contentDescription = "delete icon", modifier = Modifier.size(40.dp))
+        IconButton(onClick = {
+            if (deletingTodoID.isBlank()) {
+                onDeleteTodo()
+            }
+        }) {
+            if (deletingTodoID == todoItem.id) {
+                CircularProgressIndicator(color = Color.Black)
+            } else {
+                Image(painter = painterResource(id = R.drawable.baseline_delete_sweep_24),
+                    contentDescription = "delete icon",
+                    modifier = Modifier.size(40.dp)
+                )
+            }
         }
     }
 }

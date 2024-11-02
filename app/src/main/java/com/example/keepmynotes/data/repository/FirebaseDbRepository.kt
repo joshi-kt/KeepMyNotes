@@ -32,4 +32,9 @@ class FirebaseDbRepository {
         return null
     }
 
+    fun deleteTodoFromDb(todoItem: TodoItem) : Task<Void>? {
+        todoItem.isDeleted = true
+        return saveTodoToDb(todoItem)
+    }
+
 }
