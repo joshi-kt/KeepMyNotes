@@ -56,6 +56,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat.getString
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.keepmynotes.R
 import com.example.keepmynotes.ui.theme.lightBlue
@@ -70,15 +72,18 @@ import com.example.keepmynotes.utils.Utils.showToast
 import com.example.keepmynotes.utils.Utils.validateEmail
 import com.example.keepmynotes.utils.Utils.validateName
 import com.example.keepmynotes.utils.Utils.validatePassword
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlin.time.Duration
 
 @Composable
-fun AuthScreen(navController: NavController, viewModel: AuthViewModel){
+fun AuthScreen(navController: NavController){
 
-    val authenticationState by viewModel.authenticationState.observeAsState()
-    val authErrorText by viewModel.authErrorText.observeAsState()
-    val isLoading by viewModel.showLoading.observeAsState()
+    val authViewModel : AuthViewModel = hiltViewModel()
+
+    val authenticationState by authViewModel.authenticationState.observeAsState()
+    val authErrorText by authViewModel.authErrorText.observeAsState()
+    val isLoading by authViewModel.showLoading.observeAsState()
 
     if (authenticationState == Utils.AuthenticationState.AUTHENTICATED) {
         navController.navigate(SCREEN_NOTES)
@@ -86,7 +91,7 @@ fun AuthScreen(navController: NavController, viewModel: AuthViewModel){
 
     if (!authErrorText.isNullOrBlank()) {
         showToast(LocalContext.current, authErrorText!!)
-        viewModel.resetErrorText()
+        authViewModel.resetErrorText()
     }
 
     if (isLoading == true) {
@@ -116,21 +121,21 @@ fun AuthScreen(navController: NavController, viewModel: AuthViewModel){
         if (isSignIn) {
             SignInScreen(changeToSignUp = {
                 isSignIn = false
-                viewModel.resetErrorText()
+                authViewModel.resetErrorText()
             }, signIn = { email,password ->
                 if (isSignInCredentialValid(email,password)) {
-                    viewModel.resetErrorText()
-                    viewModel.signIn(email, password)
+                    authViewModel.resetErrorText()
+                    authViewModel.signIn(email, password)
                 }
             })
         } else {
             SignUpScreen(changeToSignIn = {
                 isSignIn = true
-                viewModel.resetErrorText()
+                authViewModel.resetErrorText()
             }, signUp = { name , email, password ->
                 if (isSignUpCredentialValid(name, email, password)) {
-                    viewModel.resetErrorText()
-                    viewModel.createUser(name, email, password)
+                    authViewModel.resetErrorText()
+                    authViewModel.createUser(name, email, password)
                 }
             })
         }

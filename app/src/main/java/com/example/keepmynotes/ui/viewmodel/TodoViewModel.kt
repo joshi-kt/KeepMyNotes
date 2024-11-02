@@ -25,9 +25,11 @@ import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
-class TodoViewModel @Inject constructor(private val firebaseDbRepository: FirebaseDbRepository, private val todoDao: TodoDAO) : ViewModel() {
+class TodoViewModel @Inject constructor(
+    private val firebaseDbRepository: FirebaseDbRepository,
+    private val todoDao: TodoDAO
+) : ViewModel() {
 
-//    private val todoDao = todoDatabase.getTodoDAO()
     var todoList : LiveData<List<TodoItem>> = todoDao.getAllTodo()
     private val _isSavingTodo = MutableLiveData(false)
     val isSavingTodo : LiveData<Boolean>

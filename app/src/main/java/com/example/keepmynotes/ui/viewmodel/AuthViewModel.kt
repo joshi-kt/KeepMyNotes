@@ -22,7 +22,10 @@ import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
-class AuthViewModel @Inject constructor(private val authRepository: AuthRepository, private val firebaseDbRepository: FirebaseDbRepository) : ViewModel() {
+class AuthViewModel @Inject constructor(
+    private val authRepository: AuthRepository,
+    private val firebaseDbRepository: FirebaseDbRepository
+) : ViewModel() {
 
     private val _authenticationState = MutableLiveData(if (AppPreferences.isLoggedIn) Utils.AuthenticationState.AUTHENTICATED else Utils.AuthenticationState.UNAUTHENTICATED)
     val authenticationState : LiveData<Utils.AuthenticationState>

@@ -23,9 +23,6 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    private val authViewModel: AuthViewModel by viewModels()
-    private val todoViewModel: TodoViewModel by viewModels()
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -33,10 +30,10 @@ class MainActivity : ComponentActivity() {
             val navController = rememberNavController()
             NavHost(navController = navController, startDestination = SCREEN_AUTH) {
                 composable(SCREEN_AUTH) { 
-                    AuthScreen(navController, viewModel = authViewModel)
+                    AuthScreen(navController)
                 }
                 composable(SCREEN_NOTES) { 
-                    ToDoListPage(navController, authViewModel = authViewModel , todoViewModel = todoViewModel)
+                    ToDoListPage(navController)
                 }
             }
         }

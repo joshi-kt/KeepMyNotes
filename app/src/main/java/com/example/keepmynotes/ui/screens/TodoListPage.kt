@@ -39,6 +39,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.keepmynotes.model.TodoItem
 import com.example.keepmynotes.ui.theme.lightBlack
@@ -55,7 +57,10 @@ import java.util.Date
 import java.util.Locale
 
 @Composable
-fun ToDoListPage(navController: NavController, todoViewModel: TodoViewModel, authViewModel: AuthViewModel) {
+fun ToDoListPage(navController: NavController) {
+
+    val todoViewModel : TodoViewModel = hiltViewModel()
+    val authViewModel : AuthViewModel = hiltViewModel()
 
     val todoList by todoViewModel.todoList.observeAsState()
     val isSavingTodo by todoViewModel.isSavingTodo.observeAsState()
