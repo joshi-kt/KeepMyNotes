@@ -81,6 +81,7 @@ import kotlin.time.Duration
 fun AuthScreen(navController: NavController){
 
     val authViewModel : AuthViewModel = hiltViewModel()
+    val context = LocalContext.current
 
     val authenticationState by authViewModel.authenticationState.observeAsState()
     val authErrorText by authViewModel.authErrorText.observeAsState()
@@ -128,6 +129,8 @@ fun AuthScreen(navController: NavController){
                 if (isSignInCredentialValid(email,password)) {
                     authViewModel.signIn(email, password)
                 }
+            }, signInUsingGoogle = {
+                authViewModel.signInUsingGoogle(context)
             })
         } else {
             SignUpScreen(changeToSignIn = {
@@ -145,7 +148,8 @@ fun AuthScreen(navController: NavController){
 @Composable
 fun SignInScreen(
     changeToSignUp : () -> Unit,
-    signIn : (String,String) -> Unit
+    signIn : (String,String) -> Unit,
+    signInUsingGoogle : () -> Unit
 ) {
 
     var email by rememberSaveable {
@@ -192,7 +196,7 @@ fun SignInScreen(
                 )
             }
 
-            Button(onClick = {signIn(email.trim(), password.trim())},
+            Button(onClick = { signInUsingGoogle() },
                 colors = ButtonDefaults.buttonColors(containerColor = Color.White),
                 modifier = Modifier.padding(top = 10.dp),
                 shape = RoundedCornerShape(8.dp),
