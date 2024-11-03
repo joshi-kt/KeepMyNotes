@@ -1,6 +1,6 @@
 package com.example.keepmynotes.ui.screens
 
-import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -42,6 +41,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.keepmynotes.data.local.preferences.AppPreferences
 import com.example.keepmynotes.model.TodoItem
 import com.example.keepmynotes.ui.theme.lightBlack
 import com.example.keepmynotes.ui.theme.lightBlue
@@ -51,6 +51,7 @@ import com.example.keepmynotes.ui.viewmodel.TodoViewModel
 import com.example.keepmynotes.utils.RestrictedAPI
 import com.example.keepmynotes.utils.Utils
 import com.example.keepmynotes.utils.Utils.SCREEN_AUTH
+import com.example.keepmynotes.utils.Utils.SCREEN_NOTES
 import com.example.keepmynotes.utils.Utils.showToast
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -64,7 +65,7 @@ fun ToDoListPage(navController: NavController) {
     val todoList by todoViewModel.todoList.observeAsState()
     val isSavingTodo by todoViewModel.isSavingTodo.observeAsState()
     val deletingTodoID by todoViewModel.isDeletingTodo.observeAsState()
-    val todoErrorText by todoViewModel.todoErrorText.observeAsState()
+    val todoToastText by todoViewModel.todoToastText.observeAsState()
 
     val authenticationState by todoViewModel.authenticationState.observeAsState()
 
@@ -80,13 +81,23 @@ fun ToDoListPage(navController: NavController) {
         mutableStateOf("")
     }
 
-    if (!todoErrorText.isNullOrBlank()) {
-        showToast(LocalContext.current, todoErrorText!!)
+    LaunchedEffect(Unit) {
+        todoViewModel.registerUserListener()
+        AppPreferences.loggedInUser?.let {
+            todoViewModel.syncTodosWithFirebase(uid = it.uid)
+        }
+    }
+
+    if (!todoToastText.isNullOrBlank()) {
+        showToast(LocalContext.current, todoToastText!!)
         todoViewModel.resetErrorText()
     }
 
     if (authenticationState == Utils.AuthenticationState.UNAUTHENTICATED) {
-        navController.navigate(SCREEN_AUTH)
+        showToast(LocalContext.current, "Logging Out ...")
+        navController.navigate(SCREEN_AUTH) {
+            popUpTo(navController.graph.id) { inclusive = true }
+        }
     }
 
     Column(modifier = Modifier
@@ -129,6 +140,20 @@ fun ToDoListPage(navController: NavController) {
                             .padding(10.dp)
                             .clickable {
                                 showDialog = true
+                                isMenuShown = isMenuShown.not()
+                            },
+                        fontSize = 16.sp,
+                    )
+                    Text(
+                        text = AppPreferences.loggedInUser?.let {
+                            if (it.multiLogin) "Disable multi login" else "Enable multiple login"
+                        } ?: "",
+                        modifier = Modifier
+                            .padding(10.dp)
+                            .clickable {
+                                AppPreferences.loggedInUser?.let {
+                                    todoViewModel.setupMultiLogin(it, !it.multiLogin)
+                                }
                                 isMenuShown = isMenuShown.not()
                             },
                         fontSize = 16.sp,

@@ -1,28 +1,20 @@
 package com.example.keepmynotes.ui.viewmodel
 
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.keepmynotes.MainApplication
 import com.example.keepmynotes.data.local.dao.TodoDAO
+import com.example.keepmynotes.data.local.preferences.AppPreferences
 import com.example.keepmynotes.data.repository.AuthRepository
 import com.example.keepmynotes.data.repository.FirebaseDbRepository
 import com.example.keepmynotes.model.TodoItem
-import com.example.keepmynotes.utils.RestrictedAPI
-import com.example.keepmynotes.utils.Utils
+import com.example.keepmynotes.model.User
 import com.example.keepmynotes.utils.Utils.generateID
 import com.example.keepmynotes.utils.Utils.logger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
@@ -30,7 +22,7 @@ class TodoViewModel @Inject constructor(
     private val firebaseDbRepository: FirebaseDbRepository,
     authRepository: AuthRepository,
     private val todoDao: TodoDAO
-) : BaseViewModel(authRepository) {
+) : BaseViewModel(authRepository, todoDao, firebaseDbRepository) {
 
     var todoList : LiveData<List<TodoItem>> = todoDao.getAllTodo()
     private val _isSavingTodo = MutableLiveData(false)
@@ -39,9 +31,9 @@ class TodoViewModel @Inject constructor(
     private val _isDeletingTodoID = MutableLiveData<String>()
     val isDeletingTodo : LiveData<String>
         get() = _isDeletingTodoID
-    private val _todoErrorText = MutableLiveData<String>()
-    val todoErrorText : LiveData<String>
-        get() = _todoErrorText
+    private val _todoToastText = MutableLiveData<String>()
+    val todoToastText : LiveData<String>
+        get() = _todoToastText
 
     fun addTodo(title : String, description : String) {
         _isSavingTodo.value = true
@@ -79,13 +71,6 @@ class TodoViewModel @Inject constructor(
         }
     }
 
-    @RestrictedAPI
-    fun deleteAllTodo() {
-        viewModelScope.launch(Dispatchers.IO) {
-            todoDao.deleteAllTodo()
-        }
-    }
-
     fun searchTodo(searchText : String) {
         viewModelScope.launch(Dispatchers.IO) {
             val wildSearchText = "%$searchText%"
@@ -97,17 +82,22 @@ class TodoViewModel @Inject constructor(
         }
     }
 
+    fun setupMultiLogin(user: User, multiLoginConfig : Boolean) {
+        user.multiLogin = multiLoginConfig
+        firebaseDbRepository.createUserInFirebaseDb(user).addOnCompleteListener {
+            if (it.isSuccessful) {
+                AppPreferences.loggedInUser = user
+                _todoToastText.value = "Multiple login ${if (multiLoginConfig) "enabled" else "disabled"}"
+            }
+        }
+    }
+
     private fun updateErrorInUI(error : String) {
-        _todoErrorText.value = error
+        _todoToastText.value = error
     }
 
     fun resetErrorText() {
-        _todoErrorText.value = ""
+        _todoToastText.value = ""
     }
 
-    @OptIn(RestrictedAPI::class)
-    override fun logOut() {
-        deleteAllTodo()
-        super.logOut()
-    }
 }

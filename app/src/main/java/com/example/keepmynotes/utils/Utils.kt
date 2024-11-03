@@ -52,6 +52,10 @@ object Utils {
         return firebaseDatabase.reference.child("Todos").child(uid).child(tid)
     }
 
+    fun getTodosPath(firebaseDatabase: FirebaseDatabase, uid : String) : DatabaseReference {
+        return firebaseDatabase.reference.child("Todos").child(uid)
+    }
+
     fun generateID() : String {
         return UUID.randomUUID().toString()
     }

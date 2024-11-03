@@ -64,6 +64,7 @@ import com.example.keepmynotes.ui.theme.lightBlue
 import com.example.keepmynotes.ui.viewmodel.AuthViewModel
 import com.example.keepmynotes.utils.Utils
 import com.example.keepmynotes.utils.Utils.PLEASE_WAIT
+import com.example.keepmynotes.utils.Utils.SCREEN_AUTH
 import com.example.keepmynotes.utils.Utils.SCREEN_NOTES
 import com.example.keepmynotes.utils.Utils.isSignInCredentialValid
 import com.example.keepmynotes.utils.Utils.isSignUpCredentialValid
@@ -86,7 +87,9 @@ fun AuthScreen(navController: NavController){
     val isLoading by authViewModel.showLoading.observeAsState()
 
     if (authenticationState == Utils.AuthenticationState.AUTHENTICATED) {
-        navController.navigate(SCREEN_NOTES)
+        navController.navigate(SCREEN_NOTES) {
+            popUpTo(navController.graph.id) { inclusive = true }
+        }
     }
 
     if (!authErrorText.isNullOrBlank()) {

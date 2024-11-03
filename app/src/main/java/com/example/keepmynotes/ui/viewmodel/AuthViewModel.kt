@@ -5,6 +5,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.keepmynotes.data.local.dao.TodoDAO
 import com.example.keepmynotes.data.local.preferences.AppPreferences
 import com.example.keepmynotes.data.repository.AuthRepository
 import com.example.keepmynotes.data.repository.FirebaseDbRepository
@@ -24,8 +25,9 @@ import javax.inject.Inject
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     private val authRepository: AuthRepository,
-    private val firebaseDbRepository: FirebaseDbRepository
-) : BaseViewModel(authRepository) {
+    private val firebaseDbRepository: FirebaseDbRepository,
+    todoDAO: TodoDAO
+) : BaseViewModel(authRepository, todoDAO, firebaseDbRepository) {
 
     private val _authErrorText = MutableLiveData<String>()
     val authErrorText : LiveData<String>
@@ -70,8 +72,12 @@ class AuthViewModel @Inject constructor(
                         setDeviceHashToUser(user)
                         saveUserToFirebase(user, onUserSaved = {
                             saveUserLocally(user)
-                            updateUiForUserLogin()
-                            hideLoading()
+                            syncTodosWithFirebase(user.uid, onTodosFetched = {
+                                updateUiForUserLogin()
+                                hideLoading()
+                            }, onFailed = {
+                                hideLoading()
+                            })
                         }, onFailed = {
                             hideLoading()
                         })
