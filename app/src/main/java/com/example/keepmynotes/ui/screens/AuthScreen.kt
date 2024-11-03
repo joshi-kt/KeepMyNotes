@@ -130,7 +130,7 @@ fun AuthScreen(navController: NavController){
                     authViewModel.signIn(email, password)
                 }
             }, signInUsingGoogle = {
-                authViewModel.signInUsingGoogle(context)
+                authViewModel.authenticateUsingGoogle(context, true)
             })
         } else {
             SignUpScreen(changeToSignIn = {
@@ -139,6 +139,8 @@ fun AuthScreen(navController: NavController){
                 if (isSignUpCredentialValid(name, email, password)) {
                     authViewModel.createUser(name, email, password)
                 }
+            }, signUpUsingGoogle = {
+                authViewModel.authenticateUsingGoogle(context, false)
             })
         }
 
@@ -241,7 +243,8 @@ fun SignInScreen(
 @Composable
 fun SignUpScreen(
     changeToSignIn : () -> Unit,
-    signUp : (String,String,String) -> Unit
+    signUp : (String,String,String) -> Unit,
+    signUpUsingGoogle: () -> Unit
 ) {
 
     var name by rememberSaveable {
@@ -294,7 +297,7 @@ fun SignUpScreen(
                 )
             }
 
-            Button(onClick = {},
+            Button(onClick = { signUpUsingGoogle() },
                 colors = ButtonDefaults.buttonColors(containerColor = Color.White),
                 modifier = Modifier.padding(top = 10.dp),
                 shape = RoundedCornerShape(8.dp),

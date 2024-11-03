@@ -38,24 +38,17 @@ open class BaseViewModel (
         logOut()
     }
 
-    fun syncTodosWithFirebase(uid: String, onTodosFetched : (List<TodoItem>) -> Unit = {}, onFailed: () -> Unit = {}) {
-        firebaseDbRepository.fetchTodosFromFirebaseDb(uid)
-            .addOnCompleteListener {
-                if (it.isSuccessful && AppPreferences.isLoggedIn) {
-                    val dataSnapshot = it.result
-                    val todos = dataSnapshot.children.mapNotNull { snapshot ->
-                        snapshot.getValue(TodoItem::class.java)
-                    }
-                    viewModelScope.launch(Dispatchers.IO) {
-                        todoDAO.insertAllTodo(todos)
-                        withContext(Dispatchers.Main) {
-                            onTodosFetched(todos)
-                        }
-                    }
-                } else {
-                    onFailed()
-                }
+    suspend fun syncTodosWithFirebase(uid: String) {
+        val snapshot = firebaseDbRepository.fetchTodosFromFirebaseDb(uid)
+        if (!AppPreferences.isLoggedIn) return
+        snapshot?.let {
+            val todos = it.children.mapNotNull { snapshot ->
+                snapshot.getValue(TodoItem::class.java)
             }
+            withContext(Dispatchers.IO) {
+                todoDAO.insertAllTodo(todos)
+            }
+        }
     }
 
     fun updateAuthenticationState(state : Utils.AuthenticationState) {

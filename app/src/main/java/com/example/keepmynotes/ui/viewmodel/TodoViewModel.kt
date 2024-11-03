@@ -15,6 +15,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.lang.Exception
 import javax.inject.Inject
 
 @HiltViewModel
@@ -37,36 +38,27 @@ class TodoViewModel @Inject constructor(
 
     fun addTodo(title : String, description : String) {
         _isSavingTodo.value = true
-        val todo = TodoItem(id = generateID(), title = title, description = description, createdAt = System.currentTimeMillis())
-        firebaseDbRepository.saveTodoToDb(todo)?.addOnCompleteListener {
-            if (it.isSuccessful) {
-                viewModelScope.launch(Dispatchers.IO) {
-                    todoDao.addTodo(todo)
-                    withContext(Dispatchers.Main) {
-                        _isSavingTodo.value = false
-                    }
+        viewModelScope.launch {
+            val todo = TodoItem(id = generateID(), title = title, description = description, createdAt = System.currentTimeMillis())
+            firebaseDbRepository.saveTodoToDb(todo)
+            withContext(Dispatchers.IO) {
+                todoDao.addTodo(todo)
+                withContext(Dispatchers.Main) {
+                    _isSavingTodo.value = false
                 }
-            } else {
-                _isSavingTodo.value = false
-                it.exception?.localizedMessage?.let { it1 -> updateErrorInUI(it1) }
-                logger("todo saving failed")
             }
         }
     }
 
     fun deleteTodo(todoItem: TodoItem) {
         _isDeletingTodoID.value = todoItem.id
-        firebaseDbRepository.deleteTodoFromDb(todoItem)?.addOnCompleteListener {
-            if (it.isSuccessful) {
-                viewModelScope.launch(Dispatchers.IO) {
-                    todoDao.deleteTodo(todoItem.id)
-                    withContext(Dispatchers.Main) {
-                        _isDeletingTodoID.value = ""
-                    }
-                }
-            } else {
-                it.exception?.localizedMessage?.let { it1 -> updateErrorInUI(it1) }
-                logger("todo deletion failed")
+        viewModelScope.launch {
+            firebaseDbRepository.deleteTodoFromDb(todoItem)
+            withContext(Dispatchers.IO){
+                todoDao.deleteTodo(todoItem.id)
+            }
+            withContext(Dispatchers.Main) {
+                _isDeletingTodoID.value = ""
             }
         }
     }
@@ -84,10 +76,14 @@ class TodoViewModel @Inject constructor(
 
     fun setupMultiLogin(user: User, multiLoginConfig : Boolean) {
         user.multiLogin = multiLoginConfig
-        firebaseDbRepository.createUserInFirebaseDb(user).addOnCompleteListener {
-            if (it.isSuccessful) {
+        viewModelScope.launch {
+            try {
+                firebaseDbRepository.createUserInFirebaseDb(user)
                 AppPreferences.loggedInUser = user
                 _todoToastText.value = "Multiple login ${if (multiLoginConfig) "enabled" else "disabled"}"
+            } catch (e : Exception) {
+                e.printStackTrace()
+                e.localizedMessage?.let { updateErrorInUI(it) }
             }
         }
     }

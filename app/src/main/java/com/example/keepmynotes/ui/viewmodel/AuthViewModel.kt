@@ -19,14 +19,15 @@ import com.example.keepmynotes.utils.Utils.setDeviceHashToUser
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
+import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.GoogleAuthProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.lang.Exception
 import java.util.UUID
 import javax.inject.Inject
+import kotlin.Exception
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
@@ -45,135 +46,149 @@ class AuthViewModel @Inject constructor(
     fun createUser(name: String, email: String, password: String) {
         showLoading()
         logger("registering user name : $name , email : $email")
-        authRepository.createUserWithEmailAndPassword(email, password).addOnCompleteListener { userCreationTask ->
-            if (userCreationTask.isSuccessful) {
-                logger("create user API result success : ${userCreationTask.isSuccessful}" )
-                val user = userCreationTask.result.user?.let {
-                    User(it.uid, name, email, UUID.randomUUID().toString())
-                }
-                logger("saving user $user")
-                saveUserToFirebase(user!!, onUserSaved = {
+
+        viewModelScope.launch {
+            try {
+                val result = authRepository.createUserWithEmailAndPassword(email, password)
+                result?.user?.let {
+                    val user = User(it.uid, name, email, UUID.randomUUID().toString())
+                    firebaseDbRepository.createUserInFirebaseDb(user)
                     saveUserLocally(user)
                     updateUiForUserLogin()
                     hideLoading()
-                }, onFailed = {
-                    hideLoading()
-                })
-            } else {
+                }
+            } catch (e : Exception) {
                 hideLoading()
-                logger("user creation task failed : ${userCreationTask.exception?.message}")
-                userCreationTask.exception?.message?.let {
+                e.printStackTrace()
+                e.localizedMessage?.let { updateErrorInUi(it) }
+            }
+        }
+    }
+
+    fun authenticateUsingGoogle(context : Context, isSignIn : Boolean) {
+        viewModelScope.launch {
+            try {
+                showLoading()
+                val credentialManager = CredentialManager.create(context)
+                val credentialResponse = credentialManager.getCredential(context, authRepository.getCredentialRequest(context))
+                val authCredential = authRepository.getAuthCredential(credentialResponse) ?: return@launch
+                logger("got credentials")
+                val firebaseUser = authRepository.signInWithFirebaseCredential(authCredential)?.user ?: return@launch
+                var user = fetchUserFromFirebase(firebaseUser.uid)
+                if (isSignIn && user == null) {
+                    throw Exception("User not found, please sign up")
+                } else if (!isSignIn && user != null) {
+                    throw Exception("User already exists, please login")
+                }
+                user = user ?: User(uid = firebaseUser.uid, name = firebaseUser.displayName ?: "", email =  firebaseUser.email ?: "", deviceHash = UUID.randomUUID().toString())
+                setDeviceHashToUser(user)
+                firebaseDbRepository.createUserInFirebaseDb(user)
+                saveUserLocally(user)
+                syncTodosWithFirebase(user.uid)
+                updateUiForUserLogin()
+                hideLoading()
+            } catch (e : Exception) {
+                hideLoading()
+                e.printStackTrace()
+                e.localizedMessage?.let {
+                    logger(it)
                     updateErrorInUi(it)
                 }
             }
         }
     }
 
-    fun signInUsingGoogle(context : Context) {
+//    private suspend fun handleAuthToken(result: GetCredentialResponse) {
+//        when(val credential = result.credential) {
+//            is CustomCredential -> {
+//                if (credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+//                    val googleIdTokenCredential = GoogleIdTokenCredential
+//                            .createFrom(credential.data)
+//                    val authCredential = GoogleAuthProvider.getCredential(googleIdTokenCredential.idToken, null)
+//                    val authResult = authRepository.signInWithFirebaseCredential(authCredential)
+//                    authResult?.user?.let {
+//                        fetchUserFromFirebase()
+//                    }
+//                }
+//            }
+//        }
+//
+//    }
 
-        val credentialManager = CredentialManager.create(context)
+//    private fun handleSignInResult(result: GetCredentialResponse) {
+//        showLoading()
+//        when(val credential = result.credential) {
+//            is CustomCredential -> {
+//                if (credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+//                    try {
+//                        val googleIdTokenCredential = GoogleIdTokenCredential
+//                            .createFrom(credential.data)
+//                        val authCredential = GoogleAuthProvider.getCredential(googleIdTokenCredential.idToken, null)
+//                        viewModelScope.launch {
+//                            val authResult = authRepository.signInWithFirebaseCredential(authCredential)
+//                            authResult?.user?.let {
 
-        val googleIdOption: GetGoogleIdOption = GetGoogleIdOption.Builder()
-            .setFilterByAuthorizedAccounts(false)
-            .setServerClientId("272783337947-1ecnjfd9b162jansvcpns7347bin4cg1.apps.googleusercontent.com")
-            .setAutoSelectEnabled(true)
-            .setNonce(UUID.randomUUID().toString())
-            .build()
+//                                fetchUserFromFirebase(it.uid, onUserFetched = { user ->
+//                                    setDeviceHashToUser(user)
 
-        val request = GetCredentialRequest.Builder()
-            .addCredentialOption(googleIdOption)
-            .build()
+//                                    saveUserToFirebase(user, onUserSaved = {
+//                                        saveUserLocally(user)
+//                                        syncTodosWithFirebase(user.uid, onTodosFetched = {
+//                                            updateUiForUserLogin()
+//                                            hideLoading()
+//                                        }, onFailed = {
+//                                            hideLoading()
+//                                        })
+//                                    }, onFailed = {
+//                                        hideLoading()
+//                                    })
 
-        viewModelScope.launch {
-            try {
-                val result = credentialManager.getCredential(context, request)
-                handleSignInResult(result)
-            } catch (e : Exception) {
-                e.printStackTrace()
-                e.localizedMessage?.let { logger(it) }
-            }
-        }
-    }
+//                                }, onFailed = {
+//
+//                                    val user = User(uid = it.uid, name = it.displayName ?: "", email =  it.email ?: "", deviceHash = UUID.randomUUID().toString())
 
-    private fun handleSignInResult(result: GetCredentialResponse) {
-        showLoading()
-        when(val credential = result.credential) {
-            is CustomCredential -> {
-                if (credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
-                    try {
-                        val googleIdTokenCredential = GoogleIdTokenCredential
-                            .createFrom(credential.data)
-                        val authCredential = GoogleAuthProvider.getCredential(googleIdTokenCredential.idToken, null)
-                        viewModelScope.launch {
-                            val authResult = authRepository.signInWithFirebaseCredential(authCredential)
-                            authResult?.user?.let {
+//                                    saveUserToFirebase(user, onUserSaved = {
+//                                        saveUserLocally(user)
+//                                        syncTodosWithFirebase(user.uid, onTodosFetched = {
+//                                            updateUiForUserLogin()
+//                                            hideLoading()
+//                                        }, onFailed = {
+//                                            hideLoading()
+//                                        })
+//                                    }, onFailed = {
+//                                        hideLoading()
+//                                    })
 
-                                fetchUserFromFirebase(it.uid, onUserFetched = { user ->
-                                    setDeviceHashToUser(user)
-                                    saveUserToFirebase(user, onUserSaved = {
-                                        saveUserLocally(user)
-                                        syncTodosWithFirebase(user.uid, onTodosFetched = {
-                                            updateUiForUserLogin()
-                                            hideLoading()
-                                        }, onFailed = {
-                                            hideLoading()
-                                        })
-                                    }, onFailed = {
-                                        hideLoading()
-                                    })
-                                }, onFailed = {
-
-                                    val user = User(uid = it.uid, name = it.displayName ?: "", email =  it.email ?: "", deviceHash = UUID.randomUUID().toString())
-
-                                    saveUserToFirebase(user, onUserSaved = {
-                                        saveUserLocally(user)
-                                        syncTodosWithFirebase(user.uid, onTodosFetched = {
-                                            updateUiForUserLogin()
-                                            hideLoading()
-                                        }, onFailed = {
-                                            hideLoading()
-                                        })
-                                    }, onFailed = {
-                                        hideLoading()
-                                    })
-
-                                })
-
-                            }
-                        }
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
-                }
-            }
-        }
-    }
+//                                })
+//
+//                            }
+//                        }
+//                    } catch (e: Exception) {
+//                        e.printStackTrace()
+//                    }
+//                }
+//            }
+//        }
+//    }
 
     fun signIn(email: String, password: String) {
         showLoading()
-        authRepository.signInWithEmailAndPassword(email, password).addOnCompleteListener { userSignInTask ->
-            if (userSignInTask.isSuccessful) {
-                userSignInTask.result.user?.let { firebaseUser ->
-                    fetchUserFromFirebase(firebaseUser.uid, onUserFetched = { user ->
+
+        viewModelScope.launch {
+            try {
+                val result = authRepository.signInWithEmailAndPassword(email, password)
+                result?.user?.let {
+                    val user = fetchUserFromFirebase(it.uid)
+                    user?.let {
                         setDeviceHashToUser(user)
-                        saveUserToFirebase(user, onUserSaved = {
-                            saveUserLocally(user)
-                            syncTodosWithFirebase(user.uid, onTodosFetched = {
-                                updateUiForUserLogin()
-                                hideLoading()
-                            }, onFailed = {
-                                hideLoading()
-                            })
-                        }, onFailed = {
-                            hideLoading()
-                        })
-                    }, onFailed = {
-                        hideLoading()
-                    })
+                        firebaseDbRepository.createUserInFirebaseDb(user)
+                        saveUserLocally(user)
+                        syncTodosWithFirebase(user.uid)
+                    }
                 }
-            } else {
+            } catch (e : Exception){
                 hideLoading()
-                userSignInTask.exception?.message?.let {
+                e.message?.let {
                     updateErrorInUi(it)
                 }
             }
@@ -207,41 +222,13 @@ class AuthViewModel @Inject constructor(
         _authErrorText.value = ""
     }
 
-    private fun saveUserToFirebase(user: User, onUserSaved : () -> Unit, onFailed : () -> Unit) {
-        firebaseDbRepository.createUserInFirebaseDb(user).addOnCompleteListener { userSavingTask ->
-            if (userSavingTask.isSuccessful) {
-                logger("saving user result success : ${userSavingTask.isSuccessful}" )
-                onUserSaved()
-            } else {
-                logger("user saving task failed : ${userSavingTask.exception?.message}")
-                logger("logging out")
-                signOut()
-                onFailed()
-                userSavingTask.exception?.message?.let {
-                    updateErrorInUi(it)
-                }
-            }
+    private suspend fun fetchUserFromFirebase(uid: String) : User? {
+        val dataSnapshot = firebaseDbRepository.fetchUserFromFirebaseDb(uid)
+        dataSnapshot?.let {
+            val user = it.getValue(User::class.java)
+            return user
         }
-    }
-
-
-    private fun fetchUserFromFirebase(uid: String, onUserFetched : (User) -> Unit, onFailed: () -> Unit) {
-        firebaseDbRepository.fetchUserFromFirebaseDb(uid)
-            .addOnSuccessListener { dataSnapshot ->
-                val user = dataSnapshot.getValue(User::class.java)
-                if (user != null) {
-                    logger("Fetched user: $user")
-                    onUserFetched(user)
-                } else {
-                    logger("User not found in the database.")
-                    onFailed()
-                }
-            }
-            .addOnFailureListener { exception ->
-                logger("Error fetching user: ${exception.message}")
-                updateErrorInUi(exception.message ?: "Error fetching user")
-                onFailed()
-            }
+        return null
     }
 
     private fun saveUserLocally(user: User) {

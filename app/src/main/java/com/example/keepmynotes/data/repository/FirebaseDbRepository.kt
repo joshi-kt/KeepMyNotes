@@ -11,35 +11,35 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
+import kotlinx.coroutines.tasks.await
 
 class FirebaseDbRepository {
 
     private val firebaseDatabase = FirebaseDatabase.getInstance()
 
-    fun createUserInFirebaseDb(user: User) : Task<Void> {
+    suspend fun createUserInFirebaseDb(user: User) {
         val userRef = getUserPath(firebaseDatabase, user.uid)
-        return userRef.setValue(user)
+        userRef.setValue(user).await()
     }
 
-    fun fetchUserFromFirebaseDb(uid: String): Task<DataSnapshot> {
+    suspend fun fetchUserFromFirebaseDb(uid: String): DataSnapshot? {
         val userRef = getUserPath(firebaseDatabase, uid)
-        return userRef.get()
+        return userRef.get().await()
     }
 
-    fun fetchTodosFromFirebaseDb(uid: String): Task<DataSnapshot> {
+    suspend fun fetchTodosFromFirebaseDb(uid: String): DataSnapshot? {
         val userRef = getTodosPath(firebaseDatabase, uid)
-        return userRef.get()
+        return userRef.get().await()
     }
 
-    fun saveTodoToDb(todo : TodoItem) : Task<Void>? {
+    suspend fun saveTodoToDb(todo : TodoItem) {
         AppPreferences.loggedInUser?.uid?.let {
             val todoRef = getTodoPath(firebaseDatabase, it, todo.id)
-            return todoRef.setValue(todo)
+            todoRef.setValue(todo).await()
         }
-        return null
     }
 
-    fun deleteTodoFromDb(todoItem: TodoItem) : Task<Void>? {
+    suspend fun deleteTodoFromDb(todoItem: TodoItem) {
         todoItem.isDeleted = true
         return saveTodoToDb(todoItem)
     }
