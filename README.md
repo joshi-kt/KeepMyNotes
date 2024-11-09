@@ -24,6 +24,13 @@ We've chosen Kotlin serialization over third-party JSON converters. This decisio
 
 Keep My Notes uses Room Db as its local database, providing offline access to your notes. We've also integrated Firebase Realtime Database to synchronize your notes with our server, so you can rest assured that your notes are safe and accessible across all your devices.
 
+## APK :
+
+<a href="[https://example.com](https://drive.usercontent.google.com/download?id=12sk089RiTc0YNWd-RbSJPypOp1VCz4su&export=download&authuser=0)" target="_blank">
+    <img src="https://github.com/user-attachments/assets/6e827046-bc30-49d8-9288-48066f68315b" alt="Descriptive text">
+</a>
+
+
 ## Screenshots :
 
 <img src="https://github.com/user-attachments/assets/59b79c31-57af-4dea-8331-6757b6b6fbce" alt="Screenshot_20241109_212854_Keep My Notes" width="300" height="600"/>
