@@ -6,7 +6,7 @@ Keep My Notes is a user-friendly and efficient Jetpack Compose application desig
 
 ### Clean MVVM Architecture - 
 
-Our application is built using the Model-View-ViewModel architecture, ensuring a clean separation of concerns and enhancing the maintainability and scalability of the app.
+Our application is built using the Model-View-ViewModel architecture, ensuring a clean separation of concerns and enhancing the maintainability and scalability of the app. It also incorporates Dagger Hilt for efficient and streamlined dependency injection.
 
 ### Secure Single-Login Feature - 
 
